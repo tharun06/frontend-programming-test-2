@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>RiskHub - FICC RWA</title>
+    <script type="text/javascript" src="https://public.tableau.com/javascripts/api/tableau-2.2.2.min.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"> </script>
+    <script type="text/javascript">
+     var viz;
+        // function f_flag()   
+        var flag = 'yes';
+        function initViz() {
+            var containerDiv = document.getElementById("vizContainer"),
+                url =
+                    "http://public.tableau.com/views/RegionalSampleWorkbook/Storms",
+                    options = {
+                    hideTabs: false,
+                    hideToolbar: true,
+                    onFirstInteractive: function () {
+                        console.log("Run this code when the viz has finished loading.");
+                        worksheet = viz.getWorkbook().getActiveSheet().getWorksheets();
+                        // viz.addEventListener(tableau.TableauEventName.TOOLBAR_STATE_CHANGE,
+                        //     onToolbarStateChange);// order is important
+                            
+                        //thi is the event listener provided my tableau. so whenever we select something on the graph
+                        // this event listener is triggered and a callbakc function onMarksSelection is called
+                        
+                            viz.addEventListener(tableau.TableauEventName.MARKS_SELECTION, onMarkSelection);
+                        var flag = 'yes'
+                        
+                        
+                    }
+                };
+            viz = new tableau.Viz(containerDiv, url, options);
+        }
+
+
+        onMarkSelection = (marksEvent) => {
+            console.log(flag+ "DDDD")
+            // console.log(marksEvent.getEventName());
+            return marksEvent.getMarksAsync().then(function (m) {
+                // console.log("[Event] Marks selection, " + m.length + " marks");
+                // flag = 'yes'
+                // console.log(m);
+                if (m.length == 0) {
+                    //Either unselecting the mark or
+                    // handleClearedSelection(m);
+                    return;
+                }
+                // var f_flag = new initViz();
+                if (flag =='yes'){
+                    reportSelectedMarks(m);
+                }
+                // flag = 'yes'
+            });
+            
+        };
+        reportSelectedMarks = (marks) => {
+            for (var markindex = 0; markindex < marks.length; markindex++) {
+                var pairs = marks[markindex].getPairs()
+            }
+            pairs2 = JSON.stringify(pairs)
+            // console.log(pairs2)
+            
+            //this below line is used in sending captured data to appliation 1 (app-1)
+            
+                fin.desktop.InterApplicationBus.send('app1-uuid', 'pairs2', pairs2);
+           
+        };
+        
+        
+        // this below subscribes the data sent from app-1 and applies on this app which is app-2
+        fin.desktop.InterApplicationBus.subscribe('app1-uuid', 'pairs', (msg, uuid, name) => {
+            console.log(uuid)
+            
+            if (uuid == "app1-uuid"){
+
+                flag = 'no'
+            }else{
+                flag = 'yes'
+            }
+            // console.log(JSON.stringify(msg, null, 4))
+            // console.log("The application:" + " " + uuid + " " + value3);
+            // console.log(worksheet.length)
+            for (var i = 0; i < worksheet.length; i++) {
+                // alert("AAAA")
+                for (var pairindex = 0; pairindex < msg.length; pairindex++) {
+                    worksheet[i].selectMarksAsync(msg[pairindex].fieldName, msg[pairindex].formattedValue,
+                        tableau.SelectionUpdateType.ADD)
+                }
+            }
+        });
+
+        // fin.desktop.InterApplicationBus.subscribe('app1-uuid', 'reset button clicked', (msg, uuid, name) => {
+        //     viz.revertAllAsync();
+        // });
+        // clearSelection = () => {
+        //     fin.desktop.InterApplicationBus.send('app1-uuid', 'reset button clicked', 'button has been clicked');
+        //     viz.revertAllAsync();
+        // }
+    </script>
+</head>
+
+<body onload="initViz() ;">
+    <div>
+        <button id="ResetButton" onclick="clearSelection()" class="btn">Reset</button>
+    </div>
+    <div id="vizContainer" style="width:800px; height:700px;"></div>
+    <br />
+</body>
+
+</html>
